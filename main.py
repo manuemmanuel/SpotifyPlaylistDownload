@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy
@@ -110,6 +111,20 @@ def download_song(youtube_url, output_path='downloads'):
         ydl.download([youtube_url])
         clean_downloads_folder(output_path)
 
+def get_downloaded_tracks(output_path='downloads'):
+    downloaded = set()
+    if os.path.exists(output_path):
+        for file in os.listdir(output_path):
+            if file.lower().endswith('.mp3'):
+                downloaded.add(file[:-4].lower())  # Remove .mp3 and convert to lowercase
+    return downloaded
+
+def is_already_downloaded(track_name, output_path='downloads'):
+    downloaded_tracks = get_downloaded_tracks(output_path)
+    # Check if any existing file matches this track
+    track_name_lower = track_name.lower()
+    return any(track_name_lower in downloaded.lower() for downloaded in downloaded_tracks)
+
 def main():
     print("\n=== Spotify Playlist Downloader ===\n")
     playlist_url = input("Enter Spotify playlist URL: ").strip()
@@ -125,12 +140,18 @@ def main():
     print("\nStarting download process...")
     successful = 0
     failed = 0
+    skipped = 0
 
     for i, track in enumerate(tracks, 1):
         print(f"\n{'='*50}")
         print(f"Processing track {i}/{len(tracks)}")
         print(f"Track: {track}")
         
+        if is_already_downloaded(track):
+            print("Track already exists in downloads folder, skipping...")
+            skipped += 1
+            continue
+
         yt_url = search_youtube(track)
         if yt_url:
             try:
@@ -150,6 +171,7 @@ def main():
     print("\nDownload Summary:")
     print(f"Total tracks processed: {len(tracks)}")
     print(f"Successfully downloaded: {successful}")
+    print(f"Previously downloaded (skipped): {skipped}")
     print(f"Failed downloads: {failed}")
     print("Done!")
 
