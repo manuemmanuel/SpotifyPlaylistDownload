@@ -76,6 +76,15 @@ def progress_hook(d):
     elif d['status'] == 'finished':
         print("\nDownload complete. Starting audio conversion...")
 
+def clean_downloads_folder(output_path='downloads'):
+    print("\nCleaning up download folder...")
+    for file in os.listdir(output_path):
+        if not file.lower().endswith('.mp3'):
+            try:
+                os.remove(os.path.join(output_path, file))
+            except Exception as e:
+                print(f"Failed to remove temporary file {file}: {str(e)}")
+
 def download_song(youtube_url, output_path='downloads'):
     print(f"\nPreparing to download from: {youtube_url}")
     print(f"Output directory: {os.path.abspath(output_path)}")
@@ -99,6 +108,7 @@ def download_song(youtube_url, output_path='downloads'):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         print("Starting download...")
         ydl.download([youtube_url])
+        clean_downloads_folder(output_path)
 
 def main():
     print("\n=== Spotify Playlist Downloader ===\n")
@@ -134,6 +144,8 @@ def main():
             failed += 1
             print("Skipping track due to YouTube search failure")
 
+    clean_downloads_folder()  # Final cleanup to ensure no temporary files remain
+    
     print("\n{'='*50}")
     print("\nDownload Summary:")
     print(f"Total tracks processed: {len(tracks)}")
